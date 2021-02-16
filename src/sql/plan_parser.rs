@@ -1,10 +1,10 @@
 // Copyright 2020-2021 The FuseQuery Authors.
 //
-// Code is licensed under Apache License, Version 2.0.
+// Code is licensed under AGPL License, Version 3.0.
 
 use std::sync::Arc;
 
-use sqlparser::ast::{FunctionArg, Statement, TableFactor};
+use sqlparser::ast::{FunctionArg, Statement, TableFactor, OrderByExpr};
 
 use crate::datavalues::{DataSchema, DataValue};
 use crate::error::{FuseQueryError, FuseQueryResult};
@@ -73,7 +73,7 @@ impl PlanParser {
     /// Generate a logic plan from an SQL query
     pub fn query_to_plan(&self, query: &sqlparser::ast::Query) -> FuseQueryResult<PlanNode> {
         match &query.body {
-            sqlparser::ast::SetExpr::Select(s) => self.select_to_plan(s.as_ref(), &query.limit),
+            sqlparser::ast::SetExpr::Select(s) => self.select_to_plan(s.as_ref(), &query.limit, &query.order_by),
             _ => Err(FuseQueryError::Internal(format!(
                 "Query {} not implemented yet",
                 query.body
@@ -86,6 +86,7 @@ impl PlanParser {
         &self,
         select: &sqlparser::ast::Select,
         limit: &Option<sqlparser::ast::Expr>,
+        order_by: &[OrderByExpr]
     ) -> FuseQueryResult<PlanNode> {
         if select.having.is_some() {
             return Err(FuseQueryError::Internal(
@@ -120,6 +121,9 @@ impl PlanParser {
         } else {
             self.project(&plan, projection_expr)?
         };
+
+        // order by
+        let plan = self.sort(&plan, order_by)?;
 
         // limit.
         let plan = self.limit(&plan, limit)?;
@@ -339,6 +343,22 @@ impl PlanParser {
             .stage(StageState::AggregatorMerge)?
             .aggregate_final(aggr_expr, group_expr)?
             .build()
+    }
+
+    fn sort(
+        &self,
+        input: &PlanNode,
+        order_by: &[OrderByExpr]
+    ) -> FuseQueryResult<PlanNode> {
+        let order_by_exprs: Vec<ExpressionPlan> = order_by.iter().map(|e| -> FuseQueryResult<ExpressionPlan> {
+            Ok(ExpressionPlan::Sort{
+                expr: Box::new(self.sql_to_rex(&e.expr, &input.schema())?),
+                asc: e.asc.unwrap_or(true),
+                nulls_first: e.nulls_first.unwrap_or(true),
+            })
+        }).collect::<FuseQueryResult<Vec<ExpressionPlan>>>()?;
+
+        PlanBuilder::from(self.ctx.clone(), &input).sort(&order_by_exprs)?.build()
     }
 
     /// Wrap a plan in a limit

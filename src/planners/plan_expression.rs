@@ -5,7 +5,7 @@
 use std::fmt;
 
 use crate::datavalues::{DataField, DataSchemaRef, DataValue};
-use crate::error::FuseQueryResult;
+use crate::error::{FuseQueryError, FuseQueryResult};
 use crate::functions::{
     AliasFunction, ConstantFunction, FieldFunction, FunctionFactory, IFunction,
 };
@@ -24,6 +24,15 @@ pub enum ExpressionPlan {
     Function {
         op: String,
         args: Vec<ExpressionPlan>,
+    },
+    /// A sort expression, that can be used to sort values.
+    Sort {
+        /// The expression to sort on
+        expr: Box<ExpressionPlan>,
+        /// The direction of the sort
+        asc: bool,
+        /// Whether to put Nulls before all other data values
+        nulls_first: bool,
     },
     Wildcard,
 }
@@ -64,6 +73,10 @@ impl ExpressionPlan {
                 AliasFunction::try_create(alias.clone(), func)
             }
             ExpressionPlan::Wildcard => FieldFunction::try_create("*"),
+            _ => Err(FuseQueryError::Internal(format!(
+                "Unsupported to_function_with_depth for {:?}",
+                self
+            )))
         }
     }
 
@@ -100,6 +113,7 @@ impl fmt::Debug for ExpressionPlan {
             }
             ExpressionPlan::Function { op, args } => write!(f, "{}({:?})", op, args),
             ExpressionPlan::Wildcard => write!(f, "*"),
+            ExpressionPlan::Sort{expr, asc, nulls_first: _} => write!(f, "{:?} {:?}", expr, asc),
         }
     }
 }

@@ -6,7 +6,7 @@ use crate::datavalues::DataSchemaRef;
 use crate::error::{FuseQueryError, FuseQueryResult};
 use crate::planners::{
     AggregatorFinalPlan, AggregatorPartialPlan, EmptyPlan, ExplainPlan, FilterPlan, LimitPlan,
-    PlanBuilder, ProjectionPlan, ReadDataSourcePlan, ScanPlan, SelectPlan, SettingPlan, StagePlan,
+    PlanBuilder, ProjectionPlan, ReadDataSourcePlan, ScanPlan, SelectPlan, SettingPlan, StagePlan, SortPlan,
 };
 use crate::sessions::FuseQueryContextRef;
 
@@ -18,6 +18,7 @@ pub enum PlanNode {
     AggregatorPartial(AggregatorPartialPlan),
     AggregatorFinal(AggregatorFinalPlan),
     Filter(FilterPlan),
+    Sort(SortPlan),
     Limit(LimitPlan),
     Scan(ScanPlan),
     ReadSource(ReadDataSourcePlan),
@@ -37,6 +38,7 @@ impl PlanNode {
             PlanNode::AggregatorPartial(v) => v.schema(),
             PlanNode::AggregatorFinal(v) => v.schema(),
             PlanNode::Filter(v) => v.schema(),
+            PlanNode::Sort(v) => v.schema(),
             PlanNode::Limit(v) => v.schema(),
             PlanNode::ReadSource(v) => v.schema(),
             PlanNode::Select(v) => v.schema(),
@@ -54,6 +56,7 @@ impl PlanNode {
             PlanNode::AggregatorPartial(_) => "AggregatorPartialPlan",
             PlanNode::AggregatorFinal(_) => "AggregatorFinalPlan",
             PlanNode::Filter(_) => "FilterPlan",
+            PlanNode::Sort(_) => "SortPlan",
             PlanNode::Limit(_) => "LimitPlan",
             PlanNode::ReadSource(_) => "ReadSourcePlan",
             PlanNode::Select(_) => "SelectPlan",
@@ -101,6 +104,11 @@ impl PlanNode {
                 }
                 PlanNode::Filter(v) => {
                     list.push(PlanNode::Filter(v.clone()));
+                    plan = v.input.as_ref().clone();
+                    depth += 1;
+                }
+                PlanNode::Sort(v) => {
+                    list.push(PlanNode::Sort(v.clone()));
                     plan = v.input.as_ref().clone();
                     depth += 1;
                 }
@@ -172,6 +180,9 @@ impl PlanNode {
                 }
                 PlanNode::Filter(v) => {
                     builder = builder.filter(v.predicate.clone())?;
+                }
+                PlanNode::Sort(v) => {
+                    builder = builder.sort(&v.sort_by)?;
                 }
                 PlanNode::Limit(v) => {
                     builder = builder.limit(v.n)?;

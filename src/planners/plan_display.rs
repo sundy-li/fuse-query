@@ -22,6 +22,7 @@ impl PlanNode {
             PlanNode::AggregatorPartial(plan) => plan.input.accept(visitor)?,
             PlanNode::AggregatorFinal(plan) => plan.input.accept(visitor)?,
             PlanNode::Filter(plan) => plan.input.accept(visitor)?,
+            PlanNode::Sort(plan) => plan.input.accept(visitor)?,
             PlanNode::Limit(plan) => plan.input.accept(visitor)?,
             PlanNode::Scan(..)
             | PlanNode::Empty(..)
@@ -130,6 +131,9 @@ impl PlanNode {
                     }
                     PlanNode::Filter(plan) => {
                         write!(f, "Filter: {:?}", plan.predicate)
+                    }
+                    PlanNode::Sort(plan) => {
+                        write!(f, "Sort: {:?}", plan.sort_by)
                     }
                     PlanNode::Limit(plan) => {
                         write!(f, "Limit: {}", plan.n)
