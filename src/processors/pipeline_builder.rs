@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::error::{FuseQueryError, FuseQueryResult};
 use crate::planners::PlanNode;
-use crate::processors::{MergeSortedProcessor, Pipeline};
+use crate::processors::{MergingSortedProcessor, Pipeline};
 use crate::sessions::FuseQueryContextRef;
 use crate::transforms::{
     AggregatorFinalTransform, AggregatorPartialTransform, FilterTransform, LimitTransform,
@@ -32,11 +32,13 @@ impl PipelineBuilder {
                     pipeline.merge_processor()?;
                 }
                 PlanNode::Sort(plan) => {
+                    let limit = self.plan.get_limit();
                     pipeline.add_simple_transform(|| {
                         Ok(Box::new(PartialSortTransform::try_create(
                             self.ctx.clone(),
                             plan.schema(),
                             plan.order_by.clone(),
+                            limit,
                         )?))
                     })?;
 
@@ -45,16 +47,16 @@ impl PipelineBuilder {
                             self.ctx.clone(),
                             plan.schema(),
                             plan.order_by.clone(),
-                            None,
+                            limit,
                         )?))
                     })?;
 
                     if pipeline.pipe_num() > 1 {
-                        let merge_sorted_processor = MergeSortedProcessor::try_create(
+                        let merge_sorted_processor = MergingSortedProcessor::try_create(
                             self.ctx.clone(),
                             plan.schema(),
                             plan.order_by.clone(),
-                            None,
+                            limit,
                         )?;
                         pipeline.merge_sort_processor(merge_sorted_processor)?;
                     }

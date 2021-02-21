@@ -194,7 +194,7 @@ impl PlanBuilder {
     ///  if no GROUP, HAVING set,
     ///  but there is an ORDER or LIMIT,
     ///  then we will perform the preliminary sorting and LIMIT on the remote server.
-    /// 
+    ///
     pub fn sort(&self, expr: &[ExpressionPlan]) -> FuseQueryResult<Self> {
         Ok(Self::from(
             self.ctx.clone(),

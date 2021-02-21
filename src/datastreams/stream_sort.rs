@@ -16,16 +16,19 @@ use crate::error::FuseQueryResult;
 pub struct SortStream {
     input: SendableDataBlockStream,
     sort_columns_descriptions: Vec<SortColumnDescription>,
+    limit: Option<usize>,
 }
 
 impl SortStream {
     pub fn try_create(
         input: SendableDataBlockStream,
         sort_columns_descriptions: Vec<SortColumnDescription>,
+        limit: Option<usize>,
     ) -> FuseQueryResult<Self> {
         Ok(SortStream {
             input,
             sort_columns_descriptions,
+            limit,
         })
     }
 }
@@ -38,7 +41,7 @@ impl Stream for SortStream {
         ctx: &mut Context<'_>,
     ) -> Poll<Option<Self::Item>> {
         self.input.poll_next_unpin(ctx).map(|x| match x {
-            Some(Ok(v)) => Some(sort_block(&v, &self.sort_columns_descriptions, None)),
+            Some(Ok(v)) => Some(sort_block(&v, &self.sort_columns_descriptions, self.limit)),
             other => other,
         })
     }

@@ -18,6 +18,7 @@ pub struct PartialSortTransform {
     ctx: FuseQueryContextRef,
     schema: DataSchemaRef,
     exprs: Vec<ExpressionPlan>,
+    limit: Option<usize>,
     input: Arc<dyn IProcessor>,
 }
 
@@ -26,11 +27,13 @@ impl PartialSortTransform {
         ctx: FuseQueryContextRef,
         schema: DataSchemaRef,
         exprs: Vec<ExpressionPlan>,
+        limit: Option<usize>,
     ) -> FuseQueryResult<Self> {
         Ok(PartialSortTransform {
             ctx,
             schema,
             exprs,
+            limit,
             input: Arc::new(EmptyProcessor::create()),
         })
     }
@@ -51,6 +54,7 @@ impl IProcessor for PartialSortTransform {
         Ok(Box::pin(SortStream::try_create(
             self.input.execute().await?,
             get_sort_descriptions(self.ctx.clone(), &self.schema, &self.exprs)?,
+            self.limit,
         )?))
     }
 }

@@ -158,6 +158,22 @@ impl PlanNode {
         self.build_plan_list(false)
     }
 
+    pub fn get_limit(&self) -> Option<usize> {
+        let children = self.get_children_nodes();
+
+        match children {
+            Ok(nodes) => {
+                for plan in nodes.iter() {
+                    if let PlanNode::Limit(limit) = plan {
+                        return Some(limit.n);
+                    }
+                }
+                None
+            }
+            _ => None,
+        }
+    }
+
     pub fn get_all_nodes(&self) -> FuseQueryResult<Vec<PlanNode>> {
         self.build_plan_list(true)
     }

@@ -3,7 +3,7 @@
 // Code is licensed under Apache License, Version 2.0.
 
 #[test]
-fn test_indices_other() -> Result<()> {
+fn test_indices_other() -> crate::error::FuseQueryResult<()> {
     use super::*;
     use arrow::compute::SortOptions;
     use std::sync::Arc;
@@ -23,7 +23,7 @@ fn test_indices_other() -> Result<()> {
 }
 
 #[test]
-fn test_indices_many() -> Result<()> {
+fn test_indices_many() -> crate::error::FuseQueryResult<()> {
     use super::*;
     use arrow::compute::SortOptions;
     use std::sync::Arc;

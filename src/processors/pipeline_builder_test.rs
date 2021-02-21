@@ -14,7 +14,7 @@ async fn test_pipeline_builder() -> crate::error::FuseQueryResult<()> {
     let plan = PlanParser::create(ctx.clone()).build_from_sql(
         "select sum(number+1)+2 as sumx from system.numbers_mt(80000) where (number+1)=4 limit 1",
     )?;
-    let pipeline = PipelineBuilder::create(ctx, plan).build()?;
+    let pipeline = PipelineBuilder::create(ctx.clone(), plan).build()?;
     let expect = "\
     \n  └─ LimitTransform × 1 processor\
     \n    └─ AggregateFinalTransform × 1 processor\
@@ -22,6 +22,21 @@ async fn test_pipeline_builder() -> crate::error::FuseQueryResult<()> {
     \n        └─ AggregatePartialTransform × 8 processors\
     \n          └─ FilterTransform × 8 processors\
     \n            └─ SourceTransform × 8 processors";
+    let actual = format!("{:?}", pipeline);
+    assert_eq!(expect, actual);
+
+    let plan = PlanParser::create(ctx.clone()).build_from_sql(
+        "select number from system.numbers_mt(80000) where (number+1)=4 order by number desc limit 10",
+    )?;
+    let pipeline = PipelineBuilder::create(ctx.clone(), plan).build()?;
+    let expect = "\
+    \n  └─ LimitTransform × 1 processor\
+    \n    └─ MergingSortedProcessor × 1 processor\
+    \n      └─ MergingSortTransform × 8 processors\
+    \n        └─ PartialSortTransform × 8 processors\
+    \n          └─ ProjectionTransform × 8 processors\
+    \n            └─ FilterTransform × 8 processors\
+    \n              └─ SourceTransform × 8 processors";
     let actual = format!("{:?}", pipeline);
     assert_eq!(expect, actual);
     Ok(())

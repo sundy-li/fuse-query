@@ -4,6 +4,7 @@
 
 use std::cmp::Ordering;
 
+use crate::error::FuseQueryResult;
 use arrow::array::{build_compare, ArrayRef};
 use arrow::compute::SortOptions;
 use arrow::error::ArrowError;
@@ -43,21 +44,23 @@ pub fn merge_indices(
     lhs: &[ArrayRef],
     rhs: &[ArrayRef],
     options: &[SortOptions],
-) -> Result<Vec<bool>> {
+) -> FuseQueryResult<Vec<bool>> {
     if lhs.len() != rhs.len() {
         return Err(ArrowError::InvalidArgumentError(format!(
             "Merge requires lhs and rhs to have the same number of arrays. lhs has {}, rhs has {}.",
             lhs.len(),
             rhs.len()
-        )));
+        ))
+        .into());
     };
     if lhs.is_empty() {
         return Err(ArrowError::InvalidArgumentError(
             "Merge requires lhs to have at least 1 entry.".to_string(),
-        ));
+        )
+        .into());
     };
     if lhs.len() != options.len() {
-        return Err(ArrowError::InvalidArgumentError(format!("Merge requires the number of sort options to equal number of columns. lhs has {} entries, options has {} entries", lhs.len(), options.len())));
+        return Err(ArrowError::InvalidArgumentError(format!("Merge requires the number of sort options to equal number of columns. lhs has {} entries, options has {} entries", lhs.len(), options.len())).into());
     };
 
     // prepare the comparison function between lhs and rhs arrays
