@@ -5,12 +5,12 @@
 use std::sync::Arc;
 
 use crate::datavalues::DataSchemaRef;
-use crate::planners::{PlanNode, ExpressionPlan};
+use crate::planners::{ExpressionPlan, PlanNode};
 
 #[derive(Clone)]
 pub struct SortPlan {
     /// The expression to sort on
-    pub sort_by: Vec<ExpressionPlan>,
+    pub order_by: Vec<ExpressionPlan>,
     /// The logical plan
     pub input: Arc<PlanNode>,
 }
@@ -20,4 +20,3 @@ impl SortPlan {
         self.input.schema()
     }
 }
-

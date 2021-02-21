@@ -6,7 +6,11 @@ use std::sync::Arc;
 
 use crate::datavalues::{DataField, DataSchema, DataSchemaRef};
 use crate::error::FuseQueryResult;
-use crate::planners::{field, AggregatorFinalPlan, AggregatorPartialPlan, DFExplainType, EmptyPlan, ExplainPlan, ExpressionPlan, FilterPlan, LimitPlan, PlanNode, PlanRewriter, ProjectionPlan, ScanPlan, SelectPlan, StagePlan, StageState, SortPlan};
+use crate::planners::{
+    field, AggregatorFinalPlan, AggregatorPartialPlan, DFExplainType, EmptyPlan, ExplainPlan,
+    ExpressionPlan, FilterPlan, LimitPlan, PlanNode, PlanRewriter, ProjectionPlan, ScanPlan,
+    SelectPlan, SortPlan, StagePlan, StageState,
+};
 use crate::sessions::FuseQueryContextRef;
 
 pub enum AggregateMode {
@@ -183,11 +187,17 @@ impl PlanBuilder {
     }
 
     /// Apply a sort
+    /// TODO
+    /// For distributed query processing,
+    ///  if no GROUP, HAVING set,
+    ///  but there is an ORDER or LIMIT,
+    ///  then we will perform the preliminary sorting and LIMIT on the remote server.
+    /// 
     pub fn sort(&self, expr: &[ExpressionPlan]) -> FuseQueryResult<Self> {
         Ok(Self::from(
             self.ctx.clone(),
             &PlanNode::Sort(SortPlan {
-                sort_by: expr.to_vec(),
+                order_by: expr.to_vec(),
                 input: Arc::new(self.plan.clone()),
             }),
         ))

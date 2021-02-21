@@ -76,7 +76,7 @@ impl ExpressionPlan {
             _ => Err(FuseQueryError::Internal(format!(
                 "Unsupported to_function_with_depth for {:?}",
                 self
-            )))
+            ))),
         }
     }
 
@@ -113,7 +113,11 @@ impl fmt::Debug for ExpressionPlan {
             }
             ExpressionPlan::Function { op, args } => write!(f, "{}({:?})", op, args),
             ExpressionPlan::Wildcard => write!(f, "*"),
-            ExpressionPlan::Sort{expr, asc, nulls_first: _} => write!(f, "{:?} {:?}", expr, asc),
+            ExpressionPlan::Sort {
+                expr,
+                asc,
+                nulls_first: _,
+            } => write!(f, "{:?} {:?}", expr, asc),
         }
     }
 }

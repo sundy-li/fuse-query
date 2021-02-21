@@ -12,6 +12,8 @@ mod transform_aggregator_final;
 mod transform_aggregator_partial;
 mod transform_filter;
 mod transform_limit;
+mod transform_merging_sort;
+mod transform_partial_sort;
 mod transform_projection;
 mod transform_source;
 
@@ -19,5 +21,7 @@ pub use self::transform_aggregator_final::AggregatorFinalTransform;
 pub use self::transform_aggregator_partial::AggregatorPartialTransform;
 pub use self::transform_filter::FilterTransform;
 pub use self::transform_limit::LimitTransform;
+pub use self::transform_merging_sort::MergingSortTransform;
+pub use self::transform_partial_sort::{get_sort_descriptions, PartialSortTransform};
 pub use self::transform_projection::ProjectionTransform;
 pub use self::transform_source::SourceTransform;

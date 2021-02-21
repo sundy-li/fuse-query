@@ -51,6 +51,10 @@ impl DataBlock {
         self.columns.len()
     }
 
+    pub fn columns(&self) -> &[DataArrayRef] {
+        &self.columns
+    }
+
     pub fn column(&self, index: usize) -> &DataArrayRef {
         &self.columns[index]
     }

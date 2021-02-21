@@ -6,7 +6,8 @@ use crate::datavalues::DataSchemaRef;
 use crate::error::{FuseQueryError, FuseQueryResult};
 use crate::planners::{
     AggregatorFinalPlan, AggregatorPartialPlan, EmptyPlan, ExplainPlan, FilterPlan, LimitPlan,
-    PlanBuilder, ProjectionPlan, ReadDataSourcePlan, ScanPlan, SelectPlan, SettingPlan, StagePlan, SortPlan,
+    PlanBuilder, ProjectionPlan, ReadDataSourcePlan, ScanPlan, SelectPlan, SettingPlan, SortPlan,
+    StagePlan,
 };
 use crate::sessions::FuseQueryContextRef;
 
@@ -182,7 +183,7 @@ impl PlanNode {
                     builder = builder.filter(v.predicate.clone())?;
                 }
                 PlanNode::Sort(v) => {
-                    builder = builder.sort(&v.sort_by)?;
+                    builder = builder.sort(&v.order_by)?;
                 }
                 PlanNode::Limit(v) => {
                     builder = builder.limit(v.n)?;

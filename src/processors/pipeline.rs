@@ -8,7 +8,7 @@ use num::range;
 
 use crate::datastreams::SendableDataBlockStream;
 use crate::error::{FuseQueryError, FuseQueryResult};
-use crate::processors::{FormatterSettings, IProcessor, MergeProcessor};
+use crate::processors::{FormatterSettings, IProcessor, MergeProcessor, MergeSortedProcessor};
 
 pub type Pipe = Vec<Arc<dyn IProcessor>>;
 
@@ -90,6 +90,23 @@ impl Pipeline {
 
         if last.len() > 1 {
             let mut p = MergeProcessor::create();
+            for x in last {
+                p.connect_to(x.clone())?;
+            }
+            self.processors.push(vec![Arc::from(p)]);
+        }
+        Ok(())
+    }
+
+    pub fn merge_sort_processor(&mut self, p: MergeSortedProcessor) -> FuseQueryResult<()> {
+        let last = self.processors.last().ok_or_else(|| {
+            FuseQueryError::Internal(
+                "Can't apply merge sort processor when the last pipe is empty".to_string(),
+            )
+        })?;
+
+        if last.len() > 1 {
+            let mut p = p;
             for x in last {
                 p.connect_to(x.clone())?;
             }

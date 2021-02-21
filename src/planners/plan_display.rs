@@ -133,7 +133,7 @@ impl PlanNode {
                         write!(f, "Filter: {:?}", plan.predicate)
                     }
                     PlanNode::Sort(plan) => {
-                        write!(f, "Sort: {:?}", plan.sort_by)
+                        write!(f, "Sort: {:?}", plan.order_by)
                     }
                     PlanNode::Limit(plan) => {
                         write!(f, "Limit: {}", plan.n)

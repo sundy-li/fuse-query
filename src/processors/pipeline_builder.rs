@@ -6,11 +6,11 @@ use std::sync::Arc;
 
 use crate::error::{FuseQueryError, FuseQueryResult};
 use crate::planners::PlanNode;
-use crate::processors::Pipeline;
+use crate::processors::{MergeSortedProcessor, Pipeline};
 use crate::sessions::FuseQueryContextRef;
 use crate::transforms::{
     AggregatorFinalTransform, AggregatorPartialTransform, FilterTransform, LimitTransform,
-    ProjectionTransform, SourceTransform,
+    MergingSortTransform, PartialSortTransform, ProjectionTransform, SourceTransform,
 };
 
 pub struct PipelineBuilder {
@@ -30,6 +30,34 @@ impl PipelineBuilder {
             match plan {
                 PlanNode::Fragment(_) => {
                     pipeline.merge_processor()?;
+                }
+                PlanNode::Sort(plan) => {
+                    pipeline.add_simple_transform(|| {
+                        Ok(Box::new(PartialSortTransform::try_create(
+                            self.ctx.clone(),
+                            plan.schema(),
+                            plan.order_by.clone(),
+                        )?))
+                    })?;
+
+                    pipeline.add_simple_transform(|| {
+                        Ok(Box::new(MergingSortTransform::try_create(
+                            self.ctx.clone(),
+                            plan.schema(),
+                            plan.order_by.clone(),
+                            None,
+                        )?))
+                    })?;
+
+                    if pipeline.pipe_num() > 1 {
+                        let merge_sorted_processor = MergeSortedProcessor::try_create(
+                            self.ctx.clone(),
+                            plan.schema(),
+                            plan.order_by.clone(),
+                            None,
+                        )?;
+                        pipeline.merge_sort_processor(merge_sorted_processor)?;
+                    }
                 }
                 PlanNode::Limit(plan) => {
                     pipeline.add_simple_transform(|| {
@@ -103,7 +131,7 @@ impl PipelineBuilder {
                     return Err(FuseQueryError::Internal(format!(
                         "Build pipeline from the plan node unsupported:{:?}",
                         other.name()
-                    )))
+                    )));
                 }
             }
         }
