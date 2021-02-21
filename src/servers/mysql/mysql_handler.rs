@@ -12,12 +12,13 @@ use futures::stream::StreamExt;
 use msql_srv::*;
 use threadpool::ThreadPool;
 
+use crate::clusters::ClusterRef;
 use crate::configs::Config;
 use crate::datablocks::DataBlock;
 use crate::error::{FuseQueryError, FuseQueryResult};
 use crate::interpreters::InterpreterFactory;
 use crate::servers::mysql::MySQLStream;
-use crate::sessions::{FuseQueryContextRef, SessionManagerRef};
+use crate::sessions::{FuseQueryContextRef, SessionRef};
 use crate::sql::PlanParser;
 
 struct Session {
@@ -74,7 +75,7 @@ impl<W: io::Write> MysqlShim<W> for Session {
                                 debug!(
                                     "MySQLHandler executor cost:{:?}, statistics:{:?}",
                                     duration,
-                                    self.ctx.get_statistics()?
+                                    self.ctx.try_get_statistics()?
                                 );
                                 Ok(r)
                             });
@@ -132,12 +133,17 @@ impl<W: io::Write> MysqlShim<W> for Session {
 
 pub struct MySQLHandler {
     cfg: Config,
-    session_mgr: SessionManagerRef,
+    session_mgr: SessionRef,
+    cluster: ClusterRef,
 }
 
 impl MySQLHandler {
-    pub fn create(cfg: Config, session_mgr: SessionManagerRef) -> Self {
-        MySQLHandler { cfg, session_mgr }
+    pub fn create(cfg: Config, session_mgr: SessionRef, cluster: ClusterRef) -> Self {
+        MySQLHandler {
+            cfg,
+            session_mgr,
+            cluster,
+        }
     }
 
     pub fn start(&self) -> FuseQueryResult<()> {
@@ -149,7 +155,10 @@ impl MySQLHandler {
 
         for stream in listener.incoming() {
             let stream = stream?;
-            let ctx = self.session_mgr.try_create_context()?;
+            let ctx = self
+                .session_mgr
+                .try_create_context()?
+                .with_cluster(self.cluster.clone())?;
             ctx.set_max_threads(self.cfg.num_cpus)?;
 
             let session_mgr = self.session_mgr.clone();

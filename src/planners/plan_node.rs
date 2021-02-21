@@ -14,7 +14,7 @@ use crate::sessions::FuseQueryContextRef;
 #[derive(Clone)]
 pub enum PlanNode {
     Empty(EmptyPlan),
-    Fragment(StagePlan),
+    Stage(StagePlan),
     Projection(ProjectionPlan),
     AggregatorPartial(AggregatorPartialPlan),
     AggregatorFinal(AggregatorFinalPlan),
@@ -33,7 +33,7 @@ impl PlanNode {
     pub fn schema(&self) -> DataSchemaRef {
         match self {
             PlanNode::Empty(v) => v.schema(),
-            PlanNode::Fragment(v) => v.schema(),
+            PlanNode::Stage(v) => v.schema(),
             PlanNode::Scan(v) => v.schema(),
             PlanNode::Projection(v) => v.schema(),
             PlanNode::AggregatorPartial(v) => v.schema(),
@@ -51,7 +51,7 @@ impl PlanNode {
     pub fn name(&self) -> &str {
         match self {
             PlanNode::Empty(_) => "EmptyPlan",
-            PlanNode::Fragment(_) => "StagePlan",
+            PlanNode::Stage(_) => "StagePlan",
             PlanNode::Scan(_) => "ScanPlan",
             PlanNode::Projection(_) => "ProjectionPlan",
             PlanNode::AggregatorPartial(_) => "AggregatorPartialPlan",
@@ -83,8 +83,8 @@ impl PlanNode {
             }
 
             match plan {
-                PlanNode::Fragment(v) => {
-                    list.push(PlanNode::Fragment(v.clone()));
+                PlanNode::Stage(v) => {
+                    list.push(PlanNode::Stage(v.clone()));
                     plan = v.input.as_ref().clone();
                     depth += 1;
                 }
@@ -197,7 +197,7 @@ impl PlanNode {
                 PlanNode::Select(_v) => {
                     builder = builder.select()?;
                 }
-                PlanNode::Fragment(v) => {
+                PlanNode::Stage(v) => {
                     builder = builder.stage(v.state.clone())?;
                 }
                 // Non node in the list.

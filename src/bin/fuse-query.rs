@@ -8,10 +8,11 @@ use simplelog::{Config as LogConfig, LevelFilter, SimpleLogger};
 use tokio::signal::unix::{signal, SignalKind};
 
 use fuse_query::admins::Admin;
+use fuse_query::clusters::Cluster;
 use fuse_query::configs::Config;
 use fuse_query::metrics::Metric;
 use fuse_query::servers::MySQLHandler;
-use fuse_query::sessions::SessionManager;
+use fuse_query::sessions::Session;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -34,9 +35,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         cfg.prometheus_exporter_address
     );
 
+    let cluster = Cluster::create(cfg.clone());
+
     // MySQL handler.
-    let session_mgr = SessionManager::create();
-    let mysql_handler = MySQLHandler::create(cfg.clone(), session_mgr.clone());
+    let session_mgr = Session::create();
+    let mysql_handler = MySQLHandler::create(cfg.clone(), session_mgr.clone(), cluster.clone());
     tokio::spawn(async move { mysql_handler.start() });
 
     info!(
@@ -47,8 +50,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         cfg.mysql_handler_port
     );
 
-    let admin = Admin::create(cfg.clone());
-    admin.start().await;
+    let admin = Admin::create(cfg.clone(), cluster.clone());
+    admin.start().await?;
 
     // Wait.
     signal(SignalKind::hangup())?.recv().await;
