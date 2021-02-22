@@ -12,28 +12,6 @@ use arrow::error::Result;
 
 /// Given two sets of _ordered_ arrays, returns a bool vector denoting which of the items of the lhs and rhs are to pick from so that
 /// if we were to sort-merge the lhs and rhs arrays together, they would all be sorted according to the `options`.
-/// # Example
-/// ```
-/// use std::sync::Arc;
-/// use arrow::array::UInt32Array;
-/// use arrow::compute::SortOptions;
-/// use arrow::compute::merge_indices;
-/// # fn main() -> arrow::error::Result<()> {
-/// let a = Arc::new(UInt32Array::from(vec![None, Some(1), Some(3)]));
-/// let b = Arc::new(UInt32Array::from(vec![None, Some(2), Some(4), Some(5)]));
-/// let c = merge_indices(&[a], &[b], &[SortOptions::default()])?;
-/// // [0] false: when equal (None = None), rhs is picked
-/// // [1] true: None < 2
-/// // [2] true: 1 < 2
-/// // [3] false: 2 < 3
-/// // [4] true: 3 < 4
-/// // [5,6] false: lhs has finished => pick rhs
-/// assert_eq!(c, vec![false, true, true, false, true, false, false]);
-/// // I.e. taking `[rhs[0], lhs[0], lhs[1], rhs[1], lhs[2], rhs[2], rhs[3]]`
-/// // leads to an ordered array.
-/// # Ok(())
-/// # }
-/// ```
 /// # Errors
 /// This function errors when:
 /// * `lhs.len() != rhs.len()`

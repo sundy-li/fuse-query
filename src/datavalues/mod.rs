@@ -37,6 +37,7 @@ pub use self::data_type::numerical_arithmetic_coercion;
 pub use self::data_type::numerical_coercion;
 pub use self::data_value_aggregate::data_value_aggregate_op;
 pub use self::data_value_arithmetic::data_value_arithmetic_op;
+pub use self::data_array_merge_sort::merge_indices;
 
 pub use self::data_array::{
     BooleanArray, DataArrayRef, Float32Array, Float64Array, Int16Array, Int32Array, Int64Array,
