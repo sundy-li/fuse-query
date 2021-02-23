@@ -5,10 +5,54 @@
 use std::cmp::Ordering;
 
 use crate::error::FuseQueryResult;
-use arrow::array::{build_compare, ArrayRef};
+use arrow::array::{build_compare, make_array, ArrayRef, MutableArrayData};
 use arrow::compute::SortOptions;
 use arrow::error::ArrowError;
 use arrow::error::Result;
+use std::sync::Arc;
+
+pub fn merge_array(lhs: &ArrayRef, rhs: &ArrayRef, indices: &[bool]) -> FuseQueryResult<ArrayRef> {
+    if lhs.data_type() != rhs.data_type() {
+        return Err(ArrowError::InvalidArgumentError(
+            "It is impossible to merge arrays of different data types.".to_string(),
+        )
+        .into());
+    }
+
+    if lhs.len() + rhs.len() < indices.len() || indices.is_empty() {
+        return Err(ArrowError::InvalidArgumentError(format!(
+            "It is impossible to merge arrays with overflow indices, {}",
+            indices.len()
+        ))
+        .into());
+    }
+
+    let arrays = vec![lhs, rhs]
+        .iter()
+        .map(|a| a.data_ref().as_ref())
+        .collect::<Vec<_>>();
+
+    let mut mutable = MutableArrayData::new(arrays, false, indices.len());
+    let (mut left_next, mut right_next, mut last_is_left) = (0usize, 0usize, indices[0]);
+
+    // tomb value
+    let extend_indices = [indices, &[false]].concat();
+
+    for (pos, &is_left) in extend_indices[1..].iter().enumerate() {
+        if is_left != last_is_left || pos + 1 == indices.len() {
+            if last_is_left {
+                mutable.extend(0, left_next, pos + 1 - right_next);
+                left_next = pos + 1 - right_next;
+            } else {
+                mutable.extend(1, right_next, pos + 1 - left_next);
+                right_next = pos + 1 - left_next;
+            }
+            last_is_left = is_left;
+        }
+    }
+
+    Ok(make_array(Arc::new(mutable.freeze())))
+}
 
 /// Given two sets of _ordered_ arrays, returns a bool vector denoting which of the items of the lhs and rhs are to pick from so that
 /// if we were to sort-merge the lhs and rhs arrays together, they would all be sorted according to the `options`.
@@ -22,6 +66,7 @@ pub fn merge_indices(
     lhs: &[ArrayRef],
     rhs: &[ArrayRef],
     options: &[SortOptions],
+    limit: Option<usize>,
 ) -> FuseQueryResult<Vec<bool>> {
     if lhs.len() != rhs.len() {
         return Err(ArrowError::InvalidArgumentError(format!(
@@ -88,7 +133,12 @@ pub fn merge_indices(
     let max_left = lhs[0].len();
     let max_right = rhs[0].len();
 
-    let mut result = Vec::with_capacity(lhs.len() + rhs.len());
+    let limits = match limit {
+        Some(limit) => limit.min(max_left + max_right),
+        _ => max_left + max_right,
+    };
+
+    let mut result = Vec::with_capacity(limits);
     while left < max_left || right < max_right {
         let order = match (left >= max_left, right >= max_right) {
             (true, true) => break,
@@ -103,7 +153,10 @@ pub fn merge_indices(
             right += 1;
             false
         };
-        result.push(value)
+        result.push(value);
+        if result.len() >= limits {
+            break;
+        }
     }
     Ok(result)
 }

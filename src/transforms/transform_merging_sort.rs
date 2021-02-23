@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::datablocks::{concat_blocks, sort_block};
+use crate::datablocks::data_block_sort::merge_sort_blocks;
 use crate::datastreams::{DataBlockStream, SendableDataBlockStream};
 use crate::datavalues::DataSchemaRef;
 use crate::error::FuseQueryResult;
@@ -57,14 +57,15 @@ impl IProcessor for MergingSortTransform {
             get_sort_descriptions(self.ctx.clone(), &self.schema, &self.exprs)?;
         let mut blocks = vec![];
         let mut stream = self.input.execute().await?;
+
         while let Some(block) = stream.next().await {
             blocks.push(block?);
         }
 
         let results = match blocks.len() {
             0 => vec![],
-            _ => vec![sort_block(
-                &concat_blocks(blocks.as_slice())?,
+            _ => vec![merge_sort_blocks(
+                &blocks,
                 &sort_columns_descriptions,
                 self.limit,
             )?],

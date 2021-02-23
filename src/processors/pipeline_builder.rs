@@ -51,6 +51,7 @@ impl PipelineBuilder {
                         )?))
                     })?;
 
+                    // TODO merge_sort_stage
                     if pipeline.pipe_num() > 1 {
                         let merge_sorted_processor = MergingSortedProcessor::try_create(
                             self.ctx.clone(),

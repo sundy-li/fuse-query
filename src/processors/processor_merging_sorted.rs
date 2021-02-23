@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use futures::StreamExt;
 use std::sync::Arc;
 
-use crate::datablocks::{concat_blocks, sort_block};
+use crate::datablocks::data_block_sort::merge_sort_blocks;
 use crate::datastreams::{DataBlockStream, SendableDataBlockStream};
 use crate::datavalues::DataSchemaRef;
 use crate::error::FuseQueryResult;
@@ -66,8 +66,8 @@ impl IProcessor for MergingSortedProcessor {
 
         let results = match blocks.len() {
             0 => vec![],
-            _ => vec![sort_block(
-                &concat_blocks(blocks.as_slice())?,
+            _ => vec![merge_sort_blocks(
+                &blocks,
                 &sort_columns_descriptions,
                 self.limit,
             )?],
