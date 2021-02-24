@@ -55,20 +55,28 @@ impl IProcessor for MergingSortTransform {
     async fn execute(&self) -> FuseQueryResult<SendableDataBlockStream> {
         let sort_columns_descriptions =
             get_sort_descriptions(self.ctx.clone(), &self.schema, &self.exprs)?;
-        let mut blocks = vec![];
         let mut stream = self.input.execute().await?;
+        let mut num = 0;
+        let mut merge_block = None;
 
         while let Some(block) = stream.next().await {
-            blocks.push(block?);
+            num = num + 1;
+
+            let block = block?;
+            if num == 1 {
+                merge_block = Some(block);
+            } else {
+                merge_block = Some(merge_sort_blocks(
+                    &[merge_block.unwrap(), block],
+                    &sort_columns_descriptions,
+                    self.limit,
+                )?);
+            }
         }
 
-        let results = match blocks.len() {
-            0 => vec![],
-            _ => vec![merge_sort_blocks(
-                &blocks,
-                &sort_columns_descriptions,
-                self.limit,
-            )?],
+        let results = match merge_block {
+            None => vec![],
+            Some(block) => vec![block],
         };
 
         Ok(Box::pin(DataBlockStream::create(
