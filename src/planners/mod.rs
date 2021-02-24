@@ -10,6 +10,7 @@ mod plan_projection_test;
 mod plan_rewriter_test;
 mod plan_select_test;
 mod plan_stage_test;
+mod plan_walker_test;
 
 mod plan_aggregator_final;
 mod plan_aggregator_partial;
@@ -34,6 +35,7 @@ mod plan_setting;
 mod plan_sort;
 mod plan_stage;
 mod plan_visitor;
+mod plan_walker;
 
 pub use self::plan_aggregator_final::AggregatorFinalPlan;
 pub use self::plan_aggregator_partial::AggregatorPartialPlan;
@@ -56,3 +58,4 @@ pub use self::plan_setting::{SettingPlan, VarValue};
 pub use self::plan_sort::SortPlan;
 pub use self::plan_stage::{StagePlan, StageState};
 pub use self::plan_visitor::{GraphvizVisitor, IndentVisitor, PlanVisitor};
+pub use self::plan_walker::{walk_postorder, walk_preorder};
