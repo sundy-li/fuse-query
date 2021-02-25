@@ -50,3 +50,4 @@ mod data_value_operator;
 
 mod kernels;
 pub use self::kernels::merge_sort::*;
+pub use self::kernels::partial_sort::*;

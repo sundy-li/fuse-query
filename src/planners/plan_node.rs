@@ -6,7 +6,10 @@ use std::sync::Arc;
 
 use crate::datavalues::{DataSchema, DataSchemaRef};
 use crate::error::FuseQueryResult;
-use crate::planners::{AggregatorFinalPlan, AggregatorPartialPlan, EmptyPlan, ExplainPlan, FilterPlan, LimitPlan, ProjectionPlan, ReadDataSourcePlan, ScanPlan, SelectPlan, SettingPlan, StagePlan, SortPlan};
+use crate::planners::{
+    AggregatorFinalPlan, AggregatorPartialPlan, EmptyPlan, ExplainPlan, FilterPlan, LimitPlan,
+    ProjectionPlan, ReadDataSourcePlan, ScanPlan, SelectPlan, SettingPlan, SortPlan, StagePlan,
+};
 
 #[derive(Clone)]
 pub enum PlanNode {

@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::error::{FuseQueryError, FuseQueryResult};
 use crate::planners::{walk_postorder, PlanNode};
-use crate::processors::{Pipeline, MergingSortedProcessor};
+use crate::processors::{MergingSortedProcessor, Pipeline};
 use crate::sessions::FuseQueryContextRef;
 use crate::transforms::{
     AggregatorFinalTransform, AggregatorPartialTransform, FilterTransform, LimitTransform,
@@ -146,7 +146,6 @@ impl PipelineBuilder {
         pipeline.merge_processor()?;
         Ok(pipeline)
     }
-
 
     pub fn get_limit(plan: &PlanNode) -> Option<usize> {
         let mut result = None;

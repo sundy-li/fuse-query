@@ -5,8 +5,8 @@
 use std::sync::Arc;
 
 use crate::datavalues::DataSchemaRef;
-use crate::planners::{ExpressionPlan, PlanNode};
 use crate::error::FuseQueryResult;
+use crate::planners::{ExpressionPlan, PlanNode};
 
 #[derive(Clone)]
 pub struct SortPlan {
