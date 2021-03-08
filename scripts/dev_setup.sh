@@ -175,6 +175,22 @@ function install_grcov {
   fi
 }
 
+function usage {
+  cat <<EOF
+  usage: $0 [options]"
+
+    options:
+      -b Enable BATCH_MODE for installation
+      -m Install Miri, which is an interpreter for Rust's mid-level intermediate representation
+      -t Install build tools
+      -o Install some operation tools
+      -p Install profile
+      -v Verbose mode
+      -y Install prover
+      -s Install codegen tools
+EOF
+}
+
 function welcome_message {
 cat <<EOF
 Welcome to FuseQuery!
@@ -218,6 +234,12 @@ Moreover, ~/.profile will be updated (since -p was provided).
 EOF
   fi
 
+  if [[ "$INSTALL_MIRI" == "true" ]]; then
+cat <<EOF
+Install Miri check, see: https://github.com/rust-lang/miri
+EOF
+  fi
+
 cat <<EOF
 If you'd prefer to install these dependencies yourself, please exit this script
 now with Ctrl-C.
@@ -231,12 +253,16 @@ OPERATIONS=false;
 INSTALL_PROFILE=false;
 INSTALL_PROVER=false;
 INSTALL_CODEGEN=false;
+INSTALL_MIRI=false;
 
 #parse args
-while getopts "btopvysh" arg; do
+while getopts "bmtopvysh" arg; do
   case "$arg" in
     b)
       BATCH_MODE="true"
+      ;;
+    m)
+      INSTALL_MIRI="true"
       ;;
     t)
       INSTALL_BUILD_TOOLS="true"
@@ -377,6 +403,15 @@ if [[ "$INSTALL_CODEGEN" == "true" ]]; then
     install_pkg python3 "$PACKAGE_MANAGER"
   fi
 fi
+
+if [[ "$INSTALL_MIRI" == "true" ]]; then
+    MIRI_NIGHTLY=nightly-$(curl -s https://rust-lang.github.io/rustup-components-history/x86_64-unknown-linux-gnu/miri)
+    echo "Installing latest nightly with Miri: $MIRI_NIGHTLY"
+    rustup set profile minimal
+    rustup default "$MIRI_NIGHTLY"
+    rustup component add miri
+fi
+
 
 [[ "${BATCH_MODE}" == "false" ]] && cat <<EOF
 Finished installing all dependencies.
