@@ -4,7 +4,7 @@
 
 use common_exception::Result;
 
-use crate::aggregators::AggregatorAvgFunction;
+use crate::aggregators::{AggregatorAvgFunction, AggregatorUniqFunction};
 use crate::aggregators::AggregatorCountFunction;
 use crate::aggregators::AggregatorMaxFunction;
 use crate::aggregators::AggregatorMinFunction;
@@ -21,6 +21,8 @@ impl AggregatorFunction {
         map.insert("max", AggregatorMaxFunction::try_create);
         map.insert("sum", AggregatorSumFunction::try_create);
         map.insert("avg", AggregatorAvgFunction::try_create);
+        map.insert("uniq", AggregatorUniqFunction::try_create);
+        map.insert("countDistinct", AggregatorUniqFunction::try_create);
         Ok(())
     }
 }

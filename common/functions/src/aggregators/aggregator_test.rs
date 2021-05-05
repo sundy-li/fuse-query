@@ -34,8 +34,8 @@ fn test_aggregator_function() -> Result<()> {
         DataField::new("b", DataType::Int64, false),
     ]));
     let block = DataBlock::create(schema.clone(), vec![
-        Arc::new(Int64Array::from(vec![4, 3, 2, 1])),
-        Arc::new(Int64Array::from(vec![1, 2, 3, 4])),
+        Arc::new(Int64Array::from(vec![4, 3, 2, 1, 1, 2, 3, 4])),
+        Arc::new(Int64Array::from(vec![1, 2, 3, 4, 4, 3, 2, 1])),
     ]);
 
     let field_a = ColumnFunction::try_create("a")?;
@@ -52,7 +52,7 @@ fn test_aggregator_function() -> Result<()> {
                 "a"
             )?])?,
             block: block.clone(),
-            expect: DataValue::UInt64(Some(4)),
+            expect: DataValue::UInt64(Some(8)),
             error: ""
         },
         Test {
@@ -96,7 +96,7 @@ fn test_aggregator_function() -> Result<()> {
             nullable: false,
             func: AggregatorSumFunction::try_create("sum", &[ColumnFunction::try_create("a")?])?,
             block: block.clone(),
-            expect: DataValue::Int64(Some(10)),
+            expect: DataValue::Int64(Some(20)),
             error: ""
         },
         Test {
@@ -145,8 +145,27 @@ fn test_aggregator_function() -> Result<()> {
                 ])?,
                 LiteralFunction::try_create(DataValue::Int8(Some(2)))?
             ])?,
-            block,
+            block: block.clone(),
             expect: DataValue::Int64(Some(100)),
+            error: ""
+        },
+        Test {
+            name: "(uniq(a+1)+2)-merge-passed",
+            eval_nums: 4,
+            args: vec![field_a.clone(), field_b.clone()],
+            display: "plus(uniq(plus(a, 1)), 2)",
+            nullable: false,
+            func: ArithmeticPlusFunction::try_create_func("+", &[
+                AggregatorUniqFunction::try_create("uniq", &[
+                    ArithmeticPlusFunction::try_create_func("+", &[
+                        ColumnFunction::try_create("a")?,
+                        LiteralFunction::try_create(DataValue::Int8(Some(1)))?
+                    ])?
+                ])?,
+                LiteralFunction::try_create(DataValue::Int8(Some(2)))?
+            ])?,
+            block: block.clone(),
+            expect: DataValue::Int64(Some(6)),
             error: ""
         },
     ];

@@ -11,10 +11,12 @@ mod aggregator_count;
 mod aggregator_max;
 mod aggregator_min;
 mod aggregator_sum;
+mod aggregator_uniq;
 
 pub use aggregator::AggregatorFunction;
 pub use aggregator_avg::AggregatorAvgFunction;
 pub use aggregator_count::AggregatorCountFunction;
+pub use aggregator_uniq::AggregatorUniqFunction;
 pub use aggregator_max::AggregatorMaxFunction;
 pub use aggregator_min::AggregatorMinFunction;
 pub use aggregator_sum::AggregatorSumFunction;
